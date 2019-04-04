@@ -59,7 +59,7 @@
             (match-define `(,bdy+ ,free1 ,procs1) 
                           (bottom-up bdy procs0)) 	  
             `((let ([,x ,rhs+]) ,bdy+)
-              ,(set-remove (set-union free0 free1) x)	
+              ,(set-union free0 (set-remove free1 x))	
               ,procs1)] 
             ; TODO: Add your other cases here
            )) 
