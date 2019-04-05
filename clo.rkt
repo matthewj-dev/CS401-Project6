@@ -62,7 +62,20 @@
               ,(set-union free0 (set-remove free1 x))	
               ,procs1)] 
             ; TODO: Add your other cases here
-           )) 
+            [(? number? n) 
+            `(,n ,(set) ,procs)]
+            [(? symbol? x)
+            `(,x ,(set x) ,procs)]
+            ; other cases
+            [`(,aes ...)
+            (clo-app ,aes ..)
+            (foldr (lambda (ae acc)
+              (match-define `((clo-app ,aes+) ,free0 ,procs) acc)
+              (match-define `(,ae+ ,free1 ,procs) 
+                              (bottom-up ae procs))
+              `((clo-app ae+ aes+) ,(set-union free0 free1) ,procs+))
+            `((clo-app) ,(set) ,procs)
+            aes)])) 
   ; Use bottom-up to generate a main procedure from the program expression e  	
   (match-define `(,main-body ,freevars ,procs)  	
                 (bottom-up e '()))  	
