@@ -53,6 +53,7 @@
   ; `(,e+ ,free+ ,procs+) of the converted expression, its free variables, and a possibly-updated list of procs
   (define (bottom-up e procs)
     (match e
+          ; let form
           [`(let ([,x ,rhs]) ,bdy) 	
           (match-define `(,rhs+ ,free0 ,procs0) 	
                         (bottom-up rhs procs))
@@ -60,13 +61,19 @@
                         (bottom-up bdy procs0))
           `((let ([,x ,rhs+]) ,bdy+)   	
             ,(set-union free0 (set-remove free1 x))
-            ,procs1)] 	
-            ; TODO: Add your other cases here   	
-          [(? number? n)
-          `(,n ,(set) ,procs)]
+            ,procs1)]
+
+            ; TODO: Add your other cases here  
+          ; symbol
           [(? symbol? x)
           `(,x ,(set x) ,procs)]
+
+          ; number   	
+          [(? number? n)
+          `(,n ,(set) ,procs)]
+
 	        ; other cases
+          ; Lambda form
           [`(lambda ,xs ,bdy)
             (match-define `(,bdy+ ,free+ ,procs+) (bottom-up bdy procs))
             (define free++ (set-subtract free+ (list->set xs)))
@@ -84,6 +91,8 @@
                           (cons 1 bdy+)
                     ordered-free-vars)))
                   procs+))]
+
+          ; argument/expression
           [`(,aes ...)
             (foldr (lambda (ae acc)
                     (match-define `((clo-app ,aes+ ...) ,free0 ,procs) acc)
@@ -92,6 +101,15 @@
                     `((clo-app ,ae+ . ,aes+) ,(set-union free0 free1) ,procs+))
             `((clo-app) ,(set) ,procs)
             aes)]
+
+            ; if form
+            [`(if ,b ,e0 ,e1)
+              (match-define `(,b1 ,freevars0 ,procs0) (bottom-up b procs))
+              (match-define `(,e01 ,freevars1 ,procs1) (bottom-up e0 procs0))
+              (match-define `(,e11 ,freevars2 ,procs2) (bottom-up e1 procs1))
+              (list `(if ,b1 ,e01 ,e11)
+                    freevars2
+                    procs2)]
             )) 	
   ; Use bottom-up to generate a main procedure from the program expression e 	
   (match-define `(,main-body ,freevars ,procs)
